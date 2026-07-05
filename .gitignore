@@ -1,0 +1,10 @@
+# Roblox / Rojo
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+/build/
+
+# Editor
+.DS_Store
+.vscode/
