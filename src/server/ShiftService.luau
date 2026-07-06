@@ -89,6 +89,12 @@ local function ensureRemotes(): (RemoteEvent, RemoteEvent)
 	return submit :: RemoteEvent, broadcast :: RemoteEvent
 end
 
+-- Presentation helper: fan an event out to all clients (server stays the truth).
+local function broadcastEvent(kind: string, payload: any): ()
+	local _, broadcast = ensureRemotes()
+	broadcast:FireAllClients(kind, payload)
+end
+
 -- Hand-built room named after shift.map (Workspace.Tambak) with a `Flag` child.
 -- If missing, spawn a labelled PLACEHOLDER so the loop still proves out -- the
 -- real wired room is still the Studio task.
@@ -271,6 +277,7 @@ end
 
 -- SERVER-AUTHORITATIVE verb resolution. Input is only (uid, verb) intent; the
 -- outcome is computed here. A wrong or spoofed verb is just handled as wrong.
+-- Fires a VerbResult { uid, result } so the HUD can give immediate feedback.
 function ShiftService.submitVerb(uid: string, verb: string): ()
 	if not running then
 		return
@@ -278,6 +285,7 @@ function ShiftService.submitVerb(uid: string, verb: string): ()
 	local now = os.clock()
 	if now < lockedUntil then
 		print(("[LOCK] hands full (%.1fs) -- verb '%s' on %s rejected"):format(lockedUntil - now, verb, uid))
+		broadcastEvent("VerbResult", { uid = uid, result = "locked" })
 		return
 	end
 	local entry = active[uid]
@@ -305,6 +313,7 @@ function ShiftService.submitVerb(uid: string, verb: string): ()
 		local oc = anomaly.onCorrectVerb
 		SanityService.apply(oc.sanity)
 		print(("[OK] %s correct '%s' (+%d, sanity %+d) lock=%.1fs -- sanity=%d"):format(uid, verb, oc.reward, oc.sanity, lock, SanityService.get()))
+		broadcastEvent("VerbResult", { uid = uid, result = "correct" })
 	else
 		local ow = anomaly.onWrongVerb
 		SanityService.apply(ow.sanity)
@@ -312,6 +321,7 @@ function ShiftService.submitVerb(uid: string, verb: string): ()
 			SanityService.addStrike()
 		end
 		print(("[X] %s wrong '%s' (expected '%s') sanity %+d strike=%s -- sanity=%d strikes=%d"):format(uid, verb, tostring(expected), ow.sanity, tostring(ow.strike), SanityService.get(), SanityService.getStrikes()))
+		broadcastEvent("VerbResult", { uid = uid, result = "wrong" })
 		if ow.triggersEnding then
 			resolveEnding(ow.triggersEnding)
 		end
@@ -455,6 +465,7 @@ function ShiftService.start(shiftId: string): string
 					end
 				end
 				print(("[TIMEOUT] %s"):format(uid))
+				broadcastEvent("VerbResult", { uid = uid, result = "timeout" })
 				resolveActive(uid)
 			end
 		end
