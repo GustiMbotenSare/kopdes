@@ -7,6 +7,14 @@
 -- AND actually exercises concurrentMax=2 across both placements. Full 6-anomaly
 -- pool is the M2 target (see GDD.md / Notion Living Spec):
 --   wrong_flag, impossible_money, bad_member_card, mascot_walking, shelf_shift, plank_gone
+--
+-- METER BALANCE (2026-07-06, first-pass playtest values):
+-- Both endings must be reachable. Base drain alone must NOT decide the run --
+-- it leaves headroom that the escalation bites (Ambient->Electricity 3/step,
+-- Counter->Patience 5/step) and verb costs eat into. So survival = handle things
+-- promptly; failure = let anomalies ride. Tune after the first Studio playtest.
+--   Electricity: 0.2/s -> 60 over 300s, ~40 headroom (was 0.6 = unreachable good ending)
+--   Patience:    0.15/s -> 45 over 300s, ~55 headroom (was 0.3 = near-guaranteed auto-strike)
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types)
 
 local shift: Types.Shift = {
@@ -20,8 +28,8 @@ local shift: Types.Shift = {
 		{ id = "r4", text = "Jangan menatap sesuatu yang tidak seharusnya bergerak." },
 	},
 	resources = {
-		{ id = "Electricity", max = 100, start = 100, drainPerSec = 0.6, onDepleted = "ending", onDepletedEnding = "diambil" },
-		{ id = "Patience", max = 100, start = 100, drainPerSec = 0.3, onDepleted = "strike" },
+		{ id = "Electricity", max = 100, start = 100, drainPerSec = 0.2, onDepleted = "ending", onDepletedEnding = "diambil" },
+		{ id = "Patience", max = 100, start = 100, drainPerSec = 0.15, onDepleted = "strike" },
 	},
 	anomalyPool = { "wrong_flag", "impossible_money" },
 	anomalyCount = 6,
