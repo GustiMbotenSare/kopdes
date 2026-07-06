@@ -2,6 +2,11 @@
 -- src/shared/shifts/Tambak_Shift1.luau
 -- M1 prototype shift. RuleCardService loads this; posted rules AND validation
 -- read from the SAME table. Never hardcode a rule in a script.
+-- SLICE SCOPE: pool is restricted to the anomalies that have data files today
+-- (wrong_flag = Ambient, impossible_money = Counter) so the slice runs clean
+-- AND actually exercises concurrentMax=2 across both placements. Full 6-anomaly
+-- pool is the M2 target (see GDD.md / Notion Living Spec):
+--   wrong_flag, impossible_money, bad_member_card, mascot_walking, shelf_shift, plank_gone
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types)
 
 local shift: Types.Shift = {
@@ -11,13 +16,14 @@ local shift: Types.Shift = {
 	rules = {
 		{ id = "r1", text = "Layani hanya anggota dengan kartu sah." },
 		{ id = "r2", text = "Bendera terbalik? JANGAN layani. Bunyikan alarm.", overrideVerb = { anomalyId = "wrong_flag", verb = "RefuseAlarm" } },
-		{ id = "r3", text = "Jangan menatap sesuatu yang tidak seharusnya bergerak." },
+		{ id = "r3", text = "Uang basah, lecek, atau nominal aneh? JANGAN terima. Bunyikan alarm.", overrideVerb = { anomalyId = "impossible_money", verb = "RefuseAlarm" } },
+		{ id = "r4", text = "Jangan menatap sesuatu yang tidak seharusnya bergerak." },
 	},
 	resources = {
 		{ id = "Electricity", max = 100, start = 100, drainPerSec = 0.6, onDepleted = "ending", onDepletedEnding = "diambil" },
 		{ id = "Patience", max = 100, start = 100, drainPerSec = 0.3, onDepleted = "strike" },
 	},
-	anomalyPool = { "wrong_flag", "impossible_money", "bad_member_card", "mascot_walking", "shelf_shift", "plank_gone" },
+	anomalyPool = { "wrong_flag", "impossible_money" },
 	anomalyCount = 6,
 	concurrentMax = 2,
 	spawnGapSeconds = { min = 12, max = 20 },
